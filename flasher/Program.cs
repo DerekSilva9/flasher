@@ -46,12 +46,21 @@ class Program
             if (triggerOn && (GetAsyncKeyState(0x12) & 0x8000) != 0)
             {
                 int id = Memory.ReadInt(game.Handle, localPawn + m_iIDEntIndex);
-                if (id > 0)
+
+                if (id > 0 && id < 1000)
                 {
+                    // --- AJUSTE DE PRECISÃO ---
+                    // Espera o boneco "entrar" na mira de verdade.
+                    // 30ms a 50ms é o ideal para não errar o primeiro tiro.
+                    Thread.Sleep(25);
+
+                    // Atira
                     mouse_event(0x0002, 0, 0, 0, 0); // Down
-                    Thread.Sleep(20);
+                    Thread.Sleep(10);                // Segura um pouco
                     mouse_event(0x0004, 0, 0, 0, 0); // Up
-                    Thread.Sleep(150);
+
+                    // Delay entre disparos (cadência)
+                    Thread.Sleep(20);
                 }
             }
             Thread.Sleep(1);
