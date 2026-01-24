@@ -9,8 +9,8 @@ class Program
     [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int v);
     [DllImport("user32.dll")] public static extern void mouse_event(uint f, uint x, uint y, uint d, int e);
 
-    const nint dwLocalPlayerPawn = 0x2061850;
-    const nint dwViewAngles = 0x2311A68;
+    const nint dwLocalPlayerPawn = 0x2062850;
+    const nint dwViewAngles = 0x2312A68;
     const nint m_iIDEntIndex = 0x3EAC;
     const nint m_aimPunchAngle = 0x16CC;
     const nint m_iShotsFired = 0x270C;
