@@ -2,70 +2,90 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Windows.Forms;
 using System.Linq;
 
 class Program
 {
     [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int v);
     [DllImport("user32.dll")] public static extern void mouse_event(uint f, uint x, uint y, uint d, int e);
-
+    
     const nint dwLocalPlayerPawn = 0x2062850;
     const nint dwViewAngles = 0x2312A68;
     const nint m_iIDEntIndex = 0x3EAC;
     const nint m_aimPunchAngle = 0x16CC;
     const nint m_iShotsFired = 0x270C;
     const nint m_flFlashMaxAlpha = 0x15F4;
+    
+    static GuiForm? gui;
 
+    [STAThread]
     static void Main()
     {
-        Console.Title = "CS2 Multi-Hack Organizado";
-        Process game = Process.GetProcessesByName("cs2")[0];
-        IntPtr clientDll = GetModule(game, "client.dll");
-
-        Cheats hackMudar = new Cheats(); // Criamos a "ferramenta" de hacks
-
-        bool rcsOn = false, flashOn = false, triggerOn = false;
-
-        Console.WriteLine("F1: RCS | F2: NoFlash | F3: Trigger | ALT: Atirar");
-
-        while (true)
+        try
         {
-            // Atalhos para ligar/desligar
-            if ((GetAsyncKeyState(0x70) & 1) != 0) { rcsOn = !rcsOn; Console.Beep(rcsOn ? 800 : 400, 100); }
-            if ((GetAsyncKeyState(0x71) & 1) != 0) { flashOn = !flashOn; Console.Beep(flashOn ? 800 : 400, 100); }
-            if ((GetAsyncKeyState(0x72) & 1) != 0) { triggerOn = !triggerOn; Console.Beep(triggerOn ? 800 : 400, 100); }
+            // Remova a linha ApplicationConfiguration.Initialize();
 
-            IntPtr localPawn = Memory.ReadPtr(game.Handle, clientDll + dwLocalPlayerPawn);
-            if (localPawn == IntPtr.Zero) continue;
+            // Use estas 3 linhas que funcionam em qualquer versão do .NET:
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
 
-            // Roda NoFlash e RCS
-            if (flashOn) hackMudar.RunNoFlash(game.Handle, localPawn, m_flFlashMaxAlpha);
-            if (rcsOn) hackMudar.RunRCS(game.Handle, localPawn, clientDll, m_iShotsFired, m_aimPunchAngle, dwViewAngles);
+            Process game = Process.GetProcessesByName("cs2")[0];
+            IntPtr clientDll = GetModule(game, "client.dll");
 
-            // Sua lógica de Triggerbot (Segura ALT)
-            if (triggerOn && (GetAsyncKeyState(0x12) & 0x8000) != 0)
+            Cheats hackMudar = new Cheats();
+
+            Thread hackThread = new Thread(() => HackLoop(game.Handle, clientDll, hackMudar))
             {
-                int id = Memory.ReadInt(game.Handle, localPawn + m_iIDEntIndex);
+                IsBackground = true
+            };
+            hackThread.Start();
 
-                if (id > 0 && id < 1000)
-                {
-                    // --- AJUSTE DE PRECISÃO ---
-                    // Espera o boneco "entrar" na mira de verdade.
-                    // 30ms a 50ms é o ideal para não errar o primeiro tiro.
-                    Thread.Sleep(25);
-
-                    // Atira
-                    mouse_event(0x0002, 0, 0, 0, 0); // Down
-                    Thread.Sleep(10);                // Segura um pouco
-                    mouse_event(0x0004, 0, 0, 0, 0); // Up
-
-                    // Delay entre disparos (cadência)
-                    Thread.Sleep(20);
-                }
-            }
-            Thread.Sleep(1);
+            gui = new GuiForm();
+            Application.Run(gui);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Erro: {ex.Message}", "Erro", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
-    static IntPtr GetModule(Process p, string n) => p.Modules.Cast<ProcessModule>().First(m => m.ModuleName == n).BaseAddress;
+    static void HackLoop(IntPtr gameHandle, IntPtr clientDll, Cheats hackMudar)
+    {
+        while (gui == null) Thread.Sleep(100);
+        
+        while (!gui.IsDisposed)
+        {
+            try
+            {
+                IntPtr localPawn = Memory.ReadPtr(gameHandle, clientDll + dwLocalPlayerPawn);
+                if (localPawn == IntPtr.Zero) { Thread.Sleep(100); continue; }
+                
+                if (gui.NoFlashEnabled) 
+                    hackMudar.RunNoFlash(gameHandle, localPawn, m_flFlashMaxAlpha);
+                
+                if (gui.RcsEnabled) 
+                    hackMudar.RunRCS(gameHandle, localPawn, clientDll, m_iShotsFired, m_aimPunchAngle, dwViewAngles);
+                
+                if (gui.TriggerEnabled && (GetAsyncKeyState(0x12) & 0x8000) != 0)
+                {
+                    int id = Memory.ReadInt(gameHandle, localPawn + m_iIDEntIndex);
+                    if (id > 0 && id < 1000)
+                    {
+                        Thread.Sleep(gui.TriggerPrecision);
+                        mouse_event(0x0002, 0, 0, 0, 0);
+                        Thread.Sleep(gui.TriggerHoldTime);
+                        mouse_event(0x0004, 0, 0, 0, 0);
+                        Thread.Sleep(gui.TriggerCadence);
+                    }
+                }
+                
+                Thread.Sleep(1);
+            }
+            catch { Thread.Sleep(1000); }
+        }
+    }
+    
+    static IntPtr GetModule(Process p, string n) => 
+        p.Modules.Cast<ProcessModule>().First(m => m.ModuleName == n).BaseAddress;
 }
