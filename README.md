@@ -8,6 +8,7 @@
 
 Um software externo desenvolvido para fins educacionais, focado em manipulação de memória (Memory Hacking) e automação de processos para o jogo Counter-Strike 2. O projeto apresenta uma interface gráfica (GUI) moderna e multithreaded.
 
+<img width="1071" height="669" alt="image" src="https://github.com/user-attachments/assets/092e2004-ef8b-4b67-931f-3e188fb2089b" />
 
 
 ---
