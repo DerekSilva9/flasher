@@ -7,6 +7,7 @@ public class GuiForm : Form
     public bool RcsEnabled = false;
     public bool NoFlashEnabled = false;
     public bool TriggerEnabled = false;
+    public bool BhopEnabled = false; 
 
     public int TriggerPrecision = 25;
     public int TriggerCadence = 20;
@@ -66,6 +67,19 @@ public class GuiForm : Form
         };
         chkRcs.CheckedChanged += (s, e) => { RcsEnabled = chkRcs.Checked; UpdateStatus(); };
         grpFeatures.Controls.Add(chkRcs);
+
+        CheckBox chkBhop = new CheckBox
+        {
+            Text = "Bunny Hop (Espaço)",
+            Location = new Point(15, 135),
+            Size = new Size(250, 25),
+            Font = new Font("Segoe UI", 9),
+            ForeColor = Color.White
+        };
+        chkBhop.CheckedChanged += (s, e) => { BhopEnabled = chkBhop.Checked; UpdateStatus(); };
+        grpFeatures.Controls.Add(chkBhop);
+
+        grpFeatures.Size = new Size(435, 180);
 
         lblRcsStatus = new Label
         {
