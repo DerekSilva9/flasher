@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Numerics; // Necessário para o Vector2
+using System.Numerics;
 
 public static class Memory
 {
@@ -15,7 +15,7 @@ public static class Memory
     public static IntPtr ReadPtr(IntPtr h, IntPtr a) { byte[] b = new byte[8]; ReadProcessMemory(h, a, b, 8, out _); return (IntPtr)BitConverter.ToInt64(b, 0); }
     public static float ReadFloat(IntPtr h, IntPtr a) { byte[] b = new byte[4]; ReadProcessMemory(h, a, b, 4, out _); return BitConverter.ToSingle(b, 0); }
 
-    // Adicionando ReadVec2 que estava faltando
+    // ReadVec2 
     public static Vector2 ReadVec2(IntPtr h, IntPtr a)
     {
         byte[] b = new byte[8];
@@ -24,7 +24,6 @@ public static class Memory
     }
 
     // --- ESCRITAS ---
-    // Ajustado para retornar 'bool' e resolver o erro de conversão implícita
     public static bool WriteInt(IntPtr h, IntPtr a, int v)
     {
         byte[] b = BitConverter.GetBytes(v);
@@ -43,7 +42,7 @@ public static class Memory
         return WriteProcessMemory(h, a, b, 4, out _);
     }
 
-    // Adicionando WriteVec2 que estava faltando
+    // WriteVec2
     public static bool WriteVec2(IntPtr h, IntPtr a, Vector2 v)
     {
         byte[] x = BitConverter.GetBytes(v.X);
