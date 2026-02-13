@@ -4,20 +4,21 @@ using System.Windows.Forms;
 
 public class GuiForm : Form
 {
+    // Variáveis de Controle
     public bool RcsEnabled = false;
     public bool NoFlashEnabled = false;
     public bool TriggerEnabled = false;
-    public bool BhopEnabled = false; 
+    public bool BhopEnabled = false;
 
     public int TriggerPrecision = 25;
     public int TriggerCadence = 20;
     public int TriggerHoldTime = 10;
 
-    private CheckBox chkRcs, chkNoFlash, chkTrigger;
+    // Componentes da UI
+    private CheckBox chkRcs, chkNoFlash, chkTrigger, chkBhop;
     private TrackBar sliderPrecision, sliderCadence, sliderHoldTime;
     private Label lblPrecisionValue, lblCadenceValue, lblHoldValue;
-    private Label lblRcsStatus, lblFlashStatus, lblTriggerStatus;
-    private Button btnPresetPistol, btnPresetRifle, btnPresetAwp;
+    private Label lblRcsStatus, lblFlashStatus, lblTriggerStatus, lblBhopStatus;
 
     public GuiForm()
     {
@@ -26,306 +27,148 @@ public class GuiForm : Form
 
     private void InitializeComponent()
     {
-        this.Text = "CS2 Multi-Hack Controller";
+        this.Text = "Flasher CS2 External - v1.2";
         this.Size = new Size(480, 620);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
-        this.StartPosition = FormStartPosition.CenterScreen;
-        this.BackColor = Color.FromArgb(25, 25, 30);
+        this.BackColor = Color.FromArgb(18, 18, 22);
         this.ForeColor = Color.White;
+        this.Font = new Font("Segoe UI", 9);
 
-        int y = 20;
-
+        // --- HEADER ---
+        Panel pnlHeader = new Panel { Dock = DockStyle.Top, Height = 60, BackColor = Color.FromArgb(30, 30, 35) };
         Label lblHeader = new Label
         {
-            Text = "═══ COUNTER-STRIKE 2 CONTROLLER ═══",
-            Location = new Point(20, y),
-            Size = new Size(440, 25),
-            Font = new Font("Consolas", 12, FontStyle.Bold),
+            Text = "FLASHER EXTERNAL CONTROLLER",
+            Dock = DockStyle.Fill,
+            Font = new Font("Consolas", 14, FontStyle.Bold),
             ForeColor = Color.FromArgb(51, 204, 255),
             TextAlign = ContentAlignment.MiddleCenter
         };
-        this.Controls.Add(lblHeader);
-        y += 40;
+        pnlHeader.Controls.Add(lblHeader);
+        this.Controls.Add(pnlHeader);
 
-        GroupBox grpFeatures = new GroupBox
+        // --- MAIN CONTAINER ---
+        FlowLayoutPanel mainPanel = new FlowLayoutPanel
         {
-            Text = "Features",
-            Location = new Point(20, y),
-            Size = new Size(435, 150),
-            ForeColor = Color.LightGray,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold)
+            Location = new Point(10, 70),
+            Size = new Size(445, 500),
+            FlowDirection = FlowDirection.TopDown
         };
 
-        chkRcs = new CheckBox
-        {
-            Text = "Recoil Control System (RCS)",
-            Location = new Point(15, 30),
-            Size = new Size(250, 25),
-            Font = new Font("Segoe UI", 9),
-            ForeColor = Color.White
-        };
+        // --- GROUP: FEATURES ---
+        GroupBox grpFeatures = CreateGroupBox("Módulos de Combate", 160);
+
+        chkRcs = CreateCheckBox("Recoil Control (RCS)", 30, grpFeatures);
         chkRcs.CheckedChanged += (s, e) => { RcsEnabled = chkRcs.Checked; UpdateStatus(); };
-        grpFeatures.Controls.Add(chkRcs);
+        lblRcsStatus = CreateStatusLabel("F1", 32, grpFeatures);
 
-        CheckBox chkBhop = new CheckBox
-        {
-            Text = "Bunny Hop (Espaço)",
-            Location = new Point(15, 135),
-            Size = new Size(250, 25),
-            Font = new Font("Segoe UI", 9),
-            ForeColor = Color.White
-        };
-        chkBhop.CheckedChanged += (s, e) => { BhopEnabled = chkBhop.Checked; UpdateStatus(); };
-        grpFeatures.Controls.Add(chkBhop);
-
-        grpFeatures.Size = new Size(435, 180);
-
-        lblRcsStatus = new Label
-        {
-            Text = "F1",
-            Location = new Point(270, 32),
-            Size = new Size(150, 20),
-            ForeColor = Color.Gray,
-            Font = new Font("Segoe UI", 8)
-        };
-        grpFeatures.Controls.Add(lblRcsStatus);
-
-        chkNoFlash = new CheckBox
-        {
-            Text = "No Flash",
-            Location = new Point(15, 65),
-            Size = new Size(250, 25),
-            Font = new Font("Segoe UI", 9),
-            ForeColor = Color.White
-        };
+        chkNoFlash = CreateCheckBox("Anti-Flashbang", 60, grpFeatures);
         chkNoFlash.CheckedChanged += (s, e) => { NoFlashEnabled = chkNoFlash.Checked; UpdateStatus(); };
-        grpFeatures.Controls.Add(chkNoFlash);
+        lblFlashStatus = CreateStatusLabel("F2", 62, grpFeatures);
 
-        lblFlashStatus = new Label
+        chkTrigger = CreateCheckBox("Triggerbot (Alt)", 90, grpFeatures);
+        chkTrigger.CheckedChanged += (s, e) => { TriggerEnabled = chkTrigger.Checked; UpdateStatus(); };
+        lblTriggerStatus = CreateStatusLabel("F3", 92, grpFeatures);
+
+        chkBhop = CreateCheckBox("Bunny Hop", 120, grpFeatures);
+        chkBhop.CheckedChanged += (s, e) => { BhopEnabled = chkBhop.Checked; UpdateStatus(); };
+        lblBhopStatus = CreateStatusLabel("Ativo", 122, grpFeatures);
+
+        mainPanel.Controls.Add(grpFeatures);
+
+        // --- GROUP: TRIGGER SETTINGS ---
+        GroupBox grpTrigger = CreateGroupBox("Ajustes de Disparo", 240);
+
+        AddSlider(grpTrigger, "Delay de Reação:", ref sliderPrecision, 0, 100, 25, ref lblPrecisionValue, "ms", 30);
+        sliderPrecision.ValueChanged += (s, e) => TriggerPrecision = sliderPrecision.Value;
+
+        AddSlider(grpTrigger, "Duração do Clique:", ref sliderHoldTime, 5, 50, 10, ref lblHoldValue, "ms", 95);
+        sliderHoldTime.ValueChanged += (s, e) => TriggerHoldTime = sliderHoldTime.Value;
+
+        AddSlider(grpTrigger, "Cadência de Tiro:", ref sliderCadence, 0, 200, 20, ref lblCadenceValue, "ms", 160);
+        sliderCadence.ValueChanged += (s, e) => TriggerCadence = sliderCadence.Value;
+
+        mainPanel.Controls.Add(grpTrigger);
+
+        // --- PRESETS ---
+        Panel pnlPresets = new Panel { Size = new Size(440, 50) };
+        Button btnPistol = CreateButton("Pistola", 0, pnlPresets, Color.FromArgb(40, 40, 45));
+        btnPistol.Click += (s, e) => ApplyPreset(15, 8, 10);
+
+        Button btnRifle = CreateButton("Rifle", 145, pnlPresets, Color.FromArgb(40, 40, 45));
+        btnRifle.Click += (s, e) => ApplyPreset(35, 12, 30);
+
+        Button btnAwp = CreateButton("AWP", 290, pnlPresets, Color.FromArgb(40, 40, 45));
+        btnAwp.Click += (s, e) => ApplyPreset(50, 15, 100);
+
+        mainPanel.Controls.Add(pnlPresets);
+
+        this.Controls.Add(mainPanel);
+        UpdateStatus();
+    }
+
+    // --- MÉTODOS AUXILIARES ---
+    private GroupBox CreateGroupBox(string title, int height)
+    {
+        return new GroupBox
         {
-            Text = "F2",
-            Location = new Point(270, 67),
-            Size = new Size(150, 20),
-            ForeColor = Color.Gray,
-            Font = new Font("Segoe UI", 8)
+            Text = title,
+            Size = new Size(440, height),
+            ForeColor = Color.FromArgb(51, 204, 255),
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            Margin = new Padding(0, 10, 0, 10)
         };
-        grpFeatures.Controls.Add(lblFlashStatus);
+    }
 
-        chkTrigger = new CheckBox
+    private CheckBox CreateCheckBox(string text, int y, Control parent)
+    {
+        CheckBox cb = new CheckBox
         {
-            Text = "Triggerbot",
-            Location = new Point(15, 100),
-            Size = new Size(250, 25),
-            Font = new Font("Segoe UI", 9),
+            Text = text,
+            Location = new Point(15, y),
+            Size = new Size(220, 25),
             ForeColor = Color.White
         };
-        chkTrigger.CheckedChanged += (s, e) => { TriggerEnabled = chkTrigger.Checked; UpdateStatus(); };
-        grpFeatures.Controls.Add(chkTrigger);
+        parent.Controls.Add(cb);
+        return cb;
+    }
 
-        lblTriggerStatus = new Label
+    private Label CreateStatusLabel(string text, int y, Control parent)
+    {
+        Label lbl = new Label
         {
-            Text = "F3 | ALT para atirar",
-            Location = new Point(270, 102),
-            Size = new Size(150, 20),
-            ForeColor = Color.Gray,
-            Font = new Font("Segoe UI", 8)
-        };
-        grpFeatures.Controls.Add(lblTriggerStatus);
-
-        this.Controls.Add(grpFeatures);
-        y += 165;
-
-        GroupBox grpTrigger = new GroupBox
-        {
-            Text = "Triggerbot Settings",
-            Location = new Point(20, y),
-            Size = new Size(435, 240),
-            ForeColor = Color.LightGray,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold)
-        };
-
-        Label lblPrecision = new Label
-        {
-            Text = "Ajuste de Precisão:",
-            Location = new Point(15, 30),
-            Size = new Size(200, 20),
-            Font = new Font("Segoe UI", 9),
-            ForeColor = Color.LightGray
-        };
-        grpTrigger.Controls.Add(lblPrecision);
-
-        lblPrecisionValue = new Label
-        {
-            Text = "25ms",
-            Location = new Point(360, 30),
-            Size = new Size(60, 20),
+            Text = text,
+            Location = new Point(280, y),
+            Size = new Size(140, 20),
             TextAlign = ContentAlignment.MiddleRight,
-            ForeColor = Color.FromArgb(51, 204, 255),
-            Font = new Font("Consolas", 9, FontStyle.Bold)
+            ForeColor = Color.Gray
         };
-        grpTrigger.Controls.Add(lblPrecisionValue);
+        parent.Controls.Add(lbl);
+        return lbl;
+    }
 
-        sliderPrecision = new TrackBar
-        {
-            Location = new Point(15, 55),
-            Size = new Size(405, 45),
-            Minimum = 0,
-            Maximum = 100,
-            Value = 25,
-            TickFrequency = 10
-        };
-        sliderPrecision.ValueChanged += (s, e) =>
-        {
-            TriggerPrecision = sliderPrecision.Value;
-            lblPrecisionValue.Text = $"{TriggerPrecision}ms";
-        };
-        grpTrigger.Controls.Add(sliderPrecision);
+    private void AddSlider(Control parent, string text, ref TrackBar tb, int min, int max, int val, ref Label valLbl, string unit, int y)
+    {
+        Label title = new Label { Text = text, Location = new Point(15, y), Size = new Size(200, 20), ForeColor = Color.LightGray };
+        valLbl = new Label { Text = val + unit, Location = new Point(350, y), Size = new Size(70, 20), TextAlign = ContentAlignment.MiddleRight, ForeColor = Color.FromArgb(51, 204, 255) };
 
-        Label lblHold = new Label
-        {
-            Text = "Tempo de Segurar:",
-            Location = new Point(15, 100),
-            Size = new Size(200, 20),
-            Font = new Font("Segoe UI", 9),
-            ForeColor = Color.LightGray
-        };
-        grpTrigger.Controls.Add(lblHold);
+        tb = new TrackBar { Location = new Point(10, y + 20), Size = new Size(410, 45), Minimum = min, Maximum = max, Value = val, TickStyle = TickStyle.None };
+        TrackBar localTb = tb;
+        Label localLbl = valLbl;
+        tb.ValueChanged += (s, e) => localLbl.Text = localTb.Value + unit;
 
-        lblHoldValue = new Label
-        {
-            Text = "10ms",
-            Location = new Point(360, 100),
-            Size = new Size(60, 20),
-            TextAlign = ContentAlignment.MiddleRight,
-            ForeColor = Color.FromArgb(51, 204, 255),
-            Font = new Font("Consolas", 9, FontStyle.Bold)
-        };
-        grpTrigger.Controls.Add(lblHoldValue);
+        parent.Controls.Add(title);
+        parent.Controls.Add(valLbl);
+        parent.Controls.Add(tb);
+    }
 
-        sliderHoldTime = new TrackBar
-        {
-            Location = new Point(15, 125),
-            Size = new Size(405, 45),
-            Minimum = 5,
-            Maximum = 50,
-            Value = 10,
-            TickFrequency = 5
-        };
-        sliderHoldTime.ValueChanged += (s, e) =>
-        {
-            TriggerHoldTime = sliderHoldTime.Value;
-            lblHoldValue.Text = $"{TriggerHoldTime}ms";
-        };
-        grpTrigger.Controls.Add(sliderHoldTime);
-
-        Label lblCadence = new Label
-        {
-            Text = "Cadência entre Tiros:",
-            Location = new Point(15, 170),
-            Size = new Size(200, 20),
-            Font = new Font("Segoe UI", 9),
-            ForeColor = Color.LightGray
-        };
-        grpTrigger.Controls.Add(lblCadence);
-
-        lblCadenceValue = new Label
-        {
-            Text = "20ms",
-            Location = new Point(360, 170),
-            Size = new Size(60, 20),
-            TextAlign = ContentAlignment.MiddleRight,
-            ForeColor = Color.FromArgb(51, 204, 255),
-            Font = new Font("Consolas", 9, FontStyle.Bold)
-        };
-        grpTrigger.Controls.Add(lblCadenceValue);
-
-        sliderCadence = new TrackBar
-        {
-            Location = new Point(15, 195),
-            Size = new Size(405, 45),
-            Minimum = 0,
-            Maximum = 200,
-            Value = 20,
-            TickFrequency = 20
-        };
-        sliderCadence.ValueChanged += (s, e) =>
-        {
-            TriggerCadence = sliderCadence.Value;
-            lblCadenceValue.Text = $"{TriggerCadence}ms";
-        };
-        grpTrigger.Controls.Add(sliderCadence);
-
-        this.Controls.Add(grpTrigger);
-        y += 255;
-
-        Label lblPresets = new Label
-        {
-            Text = "Presets Rápidos:",
-            Location = new Point(20, y),
-            Size = new Size(150, 20),
-            Font = new Font("Segoe UI", 9, FontStyle.Bold)
-        };
-        this.Controls.Add(lblPresets);
-        y += 25;
-
-        btnPresetPistol = new Button
-        {
-            Text = "🎯 Pistola Rápida",
-            Location = new Point(20, y),
-            Size = new Size(135, 35),
-            BackColor = Color.FromArgb(51, 204, 255),
-            ForeColor = Color.Black,
-            FlatStyle = FlatStyle.Flat,
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            Cursor = Cursors.Hand
-        };
-        btnPresetPistol.FlatAppearance.BorderSize = 0;
-        btnPresetPistol.Click += (s, e) => ApplyPreset(15, 8, 10);
-        this.Controls.Add(btnPresetPistol);
-
-        btnPresetRifle = new Button
-        {
-            Text = "🔫 Rifle Preciso",
-            Location = new Point(165, y),
-            Size = new Size(135, 35),
-            BackColor = Color.FromArgb(51, 204, 255),
-            ForeColor = Color.Black,
-            FlatStyle = FlatStyle.Flat,
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            Cursor = Cursors.Hand
-        };
-        btnPresetRifle.FlatAppearance.BorderSize = 0;
-        btnPresetRifle.Click += (s, e) => ApplyPreset(35, 12, 30);
-        this.Controls.Add(btnPresetRifle);
-
-        btnPresetAwp = new Button
-        {
-            Text = "💥 AWP/Scout",
-            Location = new Point(310, y),
-            Size = new Size(145, 35),
-            BackColor = Color.FromArgb(51, 204, 255),
-            ForeColor = Color.Black,
-            FlatStyle = FlatStyle.Flat,
-            Font = new Font("Segoe UI", 9, FontStyle.Bold),
-            Cursor = Cursors.Hand
-        };
-        btnPresetAwp.FlatAppearance.BorderSize = 0;
-        btnPresetAwp.Click += (s, e) => ApplyPreset(50, 15, 100);
-        this.Controls.Add(btnPresetAwp);
-
-        y += 50;
-
-        Label lblFooter = new Label
-        {
-            Text = "Desenvolvido para fins educacionais • Use com -insecure",
-            Location = new Point(20, y),
-            Size = new Size(435, 20),
-            TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.Gray,
-            Font = new Font("Segoe UI", 8)
-        };
-        this.Controls.Add(lblFooter);
+    private Button CreateButton(string text, int x, Control parent, Color backColor)
+    {
+        Button btn = new Button { Text = text, Location = new Point(x, 5), Size = new Size(125, 35), BackColor = backColor, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand };
+        btn.FlatAppearance.BorderSize = 0;
+        parent.Controls.Add(btn);
+        return btn;
     }
 
     private void ApplyPreset(int precision, int hold, int cadence)
@@ -337,21 +180,23 @@ public class GuiForm : Form
 
     private void UpdateStatus()
     {
-        lblRcsStatus.Text = RcsEnabled ? "● ATIVO (F1)" : "F1";
-        lblRcsStatus.ForeColor = RcsEnabled ? Color.FromArgb(50, 255, 100) : Color.Gray;
+        UpdateLabel(lblRcsStatus, RcsEnabled, "F1");
+        UpdateLabel(lblFlashStatus, NoFlashEnabled, "F2");
+        UpdateLabel(lblTriggerStatus, TriggerEnabled, "F3");
+        UpdateLabel(lblBhopStatus, BhopEnabled, "SPACE");
+    }
 
-        lblFlashStatus.Text = NoFlashEnabled ? "● ATIVO (F2)" : "F2";
-        lblFlashStatus.ForeColor = NoFlashEnabled ? Color.FromArgb(50, 255, 100) : Color.Gray;
-
-        lblTriggerStatus.Text = TriggerEnabled ? "● ATIVO (F3 | ALT)" : "F3 | ALT para atirar";
-        lblTriggerStatus.ForeColor = TriggerEnabled ? Color.FromArgb(50, 255, 100) : Color.Gray;
+    private void UpdateLabel(Label lbl, bool enabled, string hotkey)
+    {
+        lbl.Text = enabled ? $"● ON ({hotkey})" : $"○ OFF ({hotkey})";
+        lbl.ForeColor = enabled ? Color.FromArgb(50, 255, 100) : Color.Gray;
     }
 
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
-        if (keyData == Keys.F1) { chkRcs.Checked = !chkRcs.Checked; return true; }
-        if (keyData == Keys.F2) { chkNoFlash.Checked = !chkNoFlash.Checked; return true; }
-        if (keyData == Keys.F3) { chkTrigger.Checked = !chkTrigger.Checked; return true; }
+        if (keyData == Keys.F1) chkRcs.Checked = !chkRcs.Checked;
+        if (keyData == Keys.F2) chkNoFlash.Checked = !chkNoFlash.Checked;
+        if (keyData == Keys.F3) chkTrigger.Checked = !chkTrigger.Checked;
         return base.ProcessCmdKey(ref msg, keyData);
     }
 }

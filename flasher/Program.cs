@@ -1,35 +1,47 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Linq;
 
 class Program
 {
     [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int v);
     [DllImport("user32.dll")] public static extern void mouse_event(uint f, uint x, uint y, uint d, int e);
-    
-    const nint dwLocalPlayerPawn = 0x2064AE0;
-    const nint dwJump = 0x205DD70;
-    const nint dwViewAngles = 0x2314F98;
-    const nint m_iIDEntIndex = 0x3EAC;
-    const nint m_aimPunchAngle = 0x16CC;
-    const nint m_iShotsFired = 0x270C;
-    const nint m_flFlashMaxAlpha = 0x15F4;
-    const nint m_fFlags = 0x400;
 
+    static nint dwLocalPlayerPawn;
+    static nint dwJump;
+    static nint dwViewAngles;
+    static nint m_iIDEntIndex;
+    static nint m_aimPunchAngle;
+    static nint m_iShotsFired;
+    static nint m_flFlashMaxAlpha;
+    static nint m_fFlags;
+    static async Task LoadOffsets()
+    {
+        var o = await OffsetManager.LoadAsync();
+
+        dwLocalPlayerPawn = o["dwLocalPlayerPawn"];
+        dwJump = o["jump"];
+        dwViewAngles = o["dwViewAngles"];
+        m_iIDEntIndex = o["m_iIDEntIndex"];
+        m_aimPunchAngle = o["m_aimPunchAngle"];
+        m_iShotsFired = o["m_iShotsFired"];
+        m_flFlashMaxAlpha = o["m_flFlashMaxAlpha"];
+        m_fFlags = o["m_fFlags"];
+    }
 
     static GuiForm? gui;
 
     [STAThread]
     static void Main()
     {
+        LoadOffsets().GetAwaiter().GetResult();
+
         try
         {
-            // Remova a linha ApplicationConfiguration.Initialize();
-
-            // Use estas 3 linhas que funcionam em qualquer versão do .NET:
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -85,7 +97,6 @@ class Program
 
                 if (gui.BhopEnabled)
                 {
-                    // Passamos apenas: o Handle do processo, a Base da DLL e o Offset do Pulo
                     hackMudar.RunBunnyHop(gameHandle, clientDll, dwJump);
                 }
 
