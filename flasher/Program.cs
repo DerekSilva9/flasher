@@ -82,7 +82,7 @@ class Program
                 if (gui.RcsEnabled) 
                     hackMudar.RunRCS(gameHandle, localPawn, clientDll, m_iShotsFired, m_aimPunchAngle, dwViewAngles);
                 
-                if (gui.TriggerEnabled && (GetAsyncKeyState(0x12) & 0x8000) != 0)
+                if (gui.TriggerEnabled && (GetAsyncKeyState(gui.TriggerKey) & 0x8000) != 0)
                 {
                     int id = Memory.ReadInt(gameHandle, localPawn + m_iIDEntIndex);
                     if (id > 0 && id < 1000)

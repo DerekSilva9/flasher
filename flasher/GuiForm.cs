@@ -13,12 +13,16 @@ public class GuiForm : Form
     public int TriggerPrecision = 25;
     public int TriggerCadence = 20;
     public int TriggerHoldTime = 10;
+    public int TriggerKey = 0x12; // ALT key por padrão (0x12)
 
     // Componentes da UI
     private CheckBox chkRcs, chkNoFlash, chkTrigger, chkBhop;
     private TrackBar sliderPrecision, sliderCadence, sliderHoldTime;
     private Label lblPrecisionValue, lblCadenceValue, lblHoldValue;
     private Label lblRcsStatus, lblFlashStatus, lblTriggerStatus, lblBhopStatus;
+    private TextBox txtTriggerKey;
+    private Button btnCaptureTriggerKey;
+    private bool isCapturingTriggerKey = false;
 
     public GuiForm()
     {
@@ -78,7 +82,7 @@ public class GuiForm : Form
         mainPanel.Controls.Add(grpFeatures);
 
         // --- GROUP: TRIGGER SETTINGS ---
-        GroupBox grpTrigger = CreateGroupBox("Ajustes de Disparo", 240);
+        GroupBox grpTrigger = CreateGroupBox("Ajustes de Disparo", 290);
 
         AddSlider(grpTrigger, "Delay de Reação:", ref sliderPrecision, 0, 100, 25, ref lblPrecisionValue, "ms", 30);
         sliderPrecision.ValueChanged += (s, e) => TriggerPrecision = sliderPrecision.Value;
@@ -88,6 +92,42 @@ public class GuiForm : Form
 
         AddSlider(grpTrigger, "Cadência de Tiro:", ref sliderCadence, 0, 200, 20, ref lblCadenceValue, "ms", 160);
         sliderCadence.ValueChanged += (s, e) => TriggerCadence = sliderCadence.Value;
+
+        // --- TRIGGER KEY CONFIGURATION ---
+        Label lblTriggerKey = new Label
+        {
+            Text = "Tecla de Ativação:",
+            Location = new Point(15, 225),
+            Size = new Size(200, 20),
+            ForeColor = Color.LightGray
+        };
+        grpTrigger.Controls.Add(lblTriggerKey);
+
+        txtTriggerKey = new TextBox
+        {
+            Location = new Point(15, 245),
+            Size = new Size(200, 25),
+            Text = "ALT",
+            ReadOnly = true,
+            BackColor = Color.FromArgb(30, 30, 35),
+            ForeColor = Color.FromArgb(51, 204, 255),
+            BorderStyle = BorderStyle.FixedSingle
+        };
+        grpTrigger.Controls.Add(txtTriggerKey);
+
+        btnCaptureTriggerKey = new Button
+        {
+            Text = "Configurar Tecla",
+            Location = new Point(225, 245),
+            Size = new Size(200, 25),
+            BackColor = Color.FromArgb(40, 40, 45),
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat,
+            Cursor = Cursors.Hand
+        };
+        btnCaptureTriggerKey.FlatAppearance.BorderSize = 0;
+        btnCaptureTriggerKey.Click += (s, e) => StartCapturingTriggerKey();
+        grpTrigger.Controls.Add(btnCaptureTriggerKey);
 
         mainPanel.Controls.Add(grpTrigger);
 
@@ -197,6 +237,54 @@ public class GuiForm : Form
         if (keyData == Keys.F1) chkRcs.Checked = !chkRcs.Checked;
         if (keyData == Keys.F2) chkNoFlash.Checked = !chkNoFlash.Checked;
         if (keyData == Keys.F3) chkTrigger.Checked = !chkTrigger.Checked;
+
+        if (isCapturingTriggerKey)
+        {
+            TriggerKey = (int)keyData;
+            string keyName = GetKeyName(keyData);
+            txtTriggerKey.Text = keyName;
+            btnCaptureTriggerKey.Text = "Configurar Tecla";
+            btnCaptureTriggerKey.BackColor = Color.FromArgb(40, 40, 45);
+            isCapturingTriggerKey = false;
+            return true;
+        }
+
         return base.ProcessCmdKey(ref msg, keyData);
+    }
+
+    private void StartCapturingTriggerKey()
+    {
+        isCapturingTriggerKey = true;
+        btnCaptureTriggerKey.Text = "Aguardando tecla...";
+        btnCaptureTriggerKey.BackColor = Color.FromArgb(60, 100, 50);
+    }
+
+    private string GetKeyName(Keys key)
+    {
+        return key switch
+        {
+            Keys.ControlKey or Keys.LControlKey or Keys.RControlKey => "CTRL",
+            Keys.ShiftKey or Keys.LShiftKey or Keys.RShiftKey => "SHIFT",
+            Keys.Menu or Keys.LMenu or Keys.RMenu => "ALT",
+            Keys.Space => "SPACE",
+            Keys.Enter => "ENTER",
+            Keys.Tab => "TAB",
+            Keys.Escape => "ESC",
+            Keys.CapsLock => "CAPS",
+            Keys.LWin or Keys.RWin => "WIN",
+            Keys.F1 => "F1",
+            Keys.F2 => "F2",
+            Keys.F3 => "F3",
+            Keys.F4 => "F4",
+            Keys.F5 => "F5",
+            Keys.F6 => "F6",
+            Keys.F7 => "F7",
+            Keys.F8 => "F8",
+            Keys.F9 => "F9",
+            Keys.F10 => "F10",
+            Keys.F11 => "F11",
+            Keys.F12 => "F12",
+            _ => key.ToString().ToUpper()
+        };
     }
 }
